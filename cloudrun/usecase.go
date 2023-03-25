@@ -33,13 +33,25 @@ type OpenAI interface {
 	Request(prompt string) (string, error)
 }
 
-type ApplicationService struct {
-	openai OpenAI
+type Message struct {
+	EventSourceID EventSourceID
+	Input         string
+	Reply         string
 }
 
-func NewApplicationService(openai OpenAI) *ApplicationService {
+type MessageRepository interface {
+	Save(m Message) error
+}
+
+type ApplicationService struct {
+	openai      OpenAI
+	messageRepo MessageRepository
+}
+
+func NewApplicationService(openai OpenAI, messageRepo MessageRepository) *ApplicationService {
 	return &ApplicationService{
-		openai: openai,
+		openai:      openai,
+		messageRepo: messageRepo,
 	}
 }
 
@@ -55,5 +67,11 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 	}
 
 	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
+
+	a.messageRepo.Save(Message{
+		EventSourceID: sid,
+		Input:         input,
+		Reply:         reply,
+	})
 	return reply
 }
