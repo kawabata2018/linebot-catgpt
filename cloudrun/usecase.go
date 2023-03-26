@@ -33,14 +33,13 @@ type OpenAI interface {
 	Request(prompt string) (string, error)
 }
 
-type Message struct {
-	EventSourceID EventSourceID
-	Input         string
-	Reply         string
+type Chat struct {
+	Input string
+	Reply string
 }
 
 type MessageRepository interface {
-	Save(m Message) error
+	Save(sid EventSourceID, chat Chat) error
 }
 
 type ApplicationService struct {
@@ -68,10 +67,9 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 
 	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
-	a.messageRepo.Save(Message{
-		EventSourceID: sid,
-		Input:         input,
-		Reply:         reply,
+	a.messageRepo.Save(sid, Chat{
+		Input: input,
+		Reply: reply,
 	})
 	return reply
 }

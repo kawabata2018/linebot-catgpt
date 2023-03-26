@@ -14,7 +14,8 @@ type firestoreConfig struct {
 }
 
 type FirestoreRepository struct {
-	client *firestore.Client
+	client         *firestore.Client
+	collectionName string
 }
 
 func NewFirestoreRepository() (*FirestoreRepository, error) {
@@ -29,7 +30,8 @@ func NewFirestoreRepository() (*FirestoreRepository, error) {
 		return nil, ErrNewFirestoreClient
 	}
 	return &FirestoreRepository{
-		client: client,
+		client:         client,
+		collectionName: "catgpt",
 	}, nil
 }
 
@@ -44,17 +46,17 @@ type document struct {
 	Timestamp     time.Time
 }
 
-func (f *FirestoreRepository) Save(m Message) error {
+func (f *FirestoreRepository) Save(sid EventSourceID, chat Chat) error {
 	ctx := context.Background()
 
 	doc := document{
-		EventSourceID: string(m.EventSourceID),
-		Input:         m.Input,
-		Reply:         m.Reply,
+		EventSourceID: string(sid),
+		Input:         chat.Input,
+		Reply:         chat.Reply,
 		Timestamp:     time.Now().In(jst),
 	}
 
-	_, _, err := f.client.Collection("catgpt").Add(ctx, doc)
+	_, _, err := f.client.Collection(f.collectionName).Add(ctx, doc)
 	return err
 }
 
