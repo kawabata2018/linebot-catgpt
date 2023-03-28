@@ -2,6 +2,7 @@ package main
 
 import (
 	"time"
+	"unicode/utf8"
 
 	"golang.org/x/exp/slog"
 )
@@ -80,7 +81,8 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 }
 
 const (
-	maxHistory = 3
+	maxHistory   = 3
+	maxInputSize = 200
 )
 
 func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) string {
@@ -88,6 +90,11 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
 	slog.Info("Print input", "input", input, "EventSourceID", sid)
+
+	// 文字数が一定の長さを上回る場合は弾く
+	if utf8.RuneCountInString(input) > maxInputSize {
+		return "ごめんなさいにゃ、飼い主の懐事情でそんなに長い文章には答えられないにゃ"
+	}
 
 	history, err := a.chatRepo.FetchHistory(sid, maxHistory)
 	if err != nil {
