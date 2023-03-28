@@ -64,3 +64,60 @@ func (a *OpenAIAdapter) Request(prompt string) (string, error) {
 	slog.Debug("token usage", "prompt_tokens", usage.PromptTokens, "completion_tokens", usage.CompletionTokens, "total_tokens", usage.TotalTokens)
 	return message, nil
 }
+
+func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	defer cancel()
+
+	client := openai.NewClient(a.config.OpenAIAPIKey)
+	resp, err := client.CreateChatCompletion(
+		ctx,
+		openai.ChatCompletionRequest{
+			Model:       openai.GPT3Dot5Turbo,
+			MaxTokens:   300,
+			Temperature: 0.9,
+			Messages: createMessages(
+				"あなたはネコ型対話ロボットCatGPTにゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
+				prompt,
+				history,
+			),
+		},
+	)
+	if err != nil {
+		slog.Error("ChatCompletionError", err)
+		return "", ErrOpenAIAPIRequest
+	}
+
+	message := resp.Choices[0].Message.Content
+	usage := resp.Usage
+
+	slog.Debug("token usage", "prompt_tokens", usage.PromptTokens, "completion_tokens", usage.CompletionTokens, "total_tokens", usage.TotalTokens)
+	return message, nil
+}
+
+func createMessages(system, prompt string, history []Chat) []openai.ChatCompletionMessage {
+	messages := make([]openai.ChatCompletionMessage, 0, len(history)+2)
+
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleSystem,
+		Content: system,
+	})
+	for _, chat := range history {
+		messages = append(messages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleUser,
+			Content: chat.Input,
+		})
+		messages = append(messages, openai.ChatCompletionMessage{
+			Role:    openai.ChatMessageRoleAssistant,
+			Content: chat.Reply,
+		})
+	}
+	messages = append(messages, openai.ChatCompletionMessage{
+		Role:    openai.ChatMessageRoleUser,
+		Content: prompt,
+	})
+
+	slog.Debug("Print messages", "messages", messages)
+
+	return messages
+}

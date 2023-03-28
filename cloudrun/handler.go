@@ -59,7 +59,7 @@ func (l *Linebot) Handler(w http.ResponseWriter, req *http.Request) {
 
 	switch message := event.Message.(type) {
 	case *linebot.TextMessage:
-		reply := l.app.Reply(message.Text, getEventSourceID(event))
+		reply := l.app.ReplyWithHistory(message.Text, getEventSourceID(event))
 		l.replyTextMessage(event.ReplyToken, reply)
 	}
 }
