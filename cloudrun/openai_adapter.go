@@ -28,7 +28,7 @@ func NewOpenAIAdapter() (*OpenAIAdapter, error) {
 	}, nil
 }
 
-const requestTimeout = 3 * time.Minute
+const requestTimeout = 100 * time.Second
 
 func (a *OpenAIAdapter) Request(prompt string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
@@ -41,16 +41,11 @@ func (a *OpenAIAdapter) Request(prompt string) (string, error) {
 			Model:       openai.GPT3Dot5Turbo,
 			MaxTokens:   300,
 			Temperature: 0.9,
-			Messages: []openai.ChatCompletionMessage{
-				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: "あなたはネコ型対話ロボットCatGPTにゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
-				},
-				{
-					Role:    openai.ChatMessageRoleUser,
-					Content: prompt,
-				},
-			},
+			Messages: createMessages(
+				"あなたはネコ型対話ロボット「CatGPT」にゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
+				prompt,
+				nil,
+			),
 		},
 	)
 	if err != nil {
@@ -77,7 +72,7 @@ func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (strin
 			MaxTokens:   300,
 			Temperature: 0.9,
 			Messages: createMessages(
-				"あなたはネコ型対話ロボットCatGPTにゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
+				"あなたはネコ型対話ロボット「CatGPT」にゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
 				prompt,
 				history,
 			),
