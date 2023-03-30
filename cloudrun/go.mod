@@ -8,6 +8,7 @@ require (
 	github.com/line/line-bot-sdk-go/v7 v7.20.0
 	github.com/sashabaranov/go-openai v1.5.7
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	google.golang.org/api v0.103.0
 )
 
 require (
@@ -28,7 +29,6 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
-	google.golang.org/api v0.103.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
 	google.golang.org/grpc v1.50.1 // indirect

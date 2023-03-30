@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"cloud.google.com/go/firestore"
@@ -92,6 +93,32 @@ func (f *FirestoreRepository) FetchHistory(sid EventSourceID, max int) ([]Chat, 
 	// タイムスタンプ降順になっているので、時系列順に直してあげる
 	chatHistory := reverse(chats)
 	return chatHistory, nil
+}
+
+type usageDocument struct {
+	EventSourceID    string
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+	Timestamp        time.Time
+}
+
+func (f *FirestoreRepository) Add(sid EventSourceID, usage APIUsage) error {
+	slog.Debug("Print api usage", "usage", usage)
+
+	ctx := context.Background()
+
+	coll := fmt.Sprintf("%s_usage", f.collectionName)
+	doc := usageDocument{
+		EventSourceID:    string(sid),
+		PromptTokens:     usage.PromptTokens,
+		CompletionTokens: usage.CompletionTokens,
+		TotalTokens:      usage.TotalTokens,
+		Timestamp:        time.Now().In(jst),
+	}
+
+	_, _, err := f.client.Collection(coll).Add(ctx, doc)
+	return err
 }
 
 func (f *FirestoreRepository) Close() error {

@@ -30,7 +30,7 @@ func NewOpenAIAdapter() (*OpenAIAdapter, error) {
 
 const requestTimeout = 100 * time.Second
 
-func (a *OpenAIAdapter) Request(prompt string) (string, error) {
+func (a *OpenAIAdapter) Request(prompt string) (string, *APIUsage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
@@ -50,17 +50,19 @@ func (a *OpenAIAdapter) Request(prompt string) (string, error) {
 	)
 	if err != nil {
 		slog.Error("ChatCompletionError", err)
-		return "", ErrOpenAIAPIRequest
+		return "", nil, ErrOpenAIAPIRequest
 	}
 
 	message := resp.Choices[0].Message.Content
-	usage := resp.Usage
-
-	slog.Debug("token usage", "prompt_tokens", usage.PromptTokens, "completion_tokens", usage.CompletionTokens, "total_tokens", usage.TotalTokens)
-	return message, nil
+	usage := &APIUsage{
+		PromptTokens:     resp.Usage.PromptTokens,
+		CompletionTokens: resp.Usage.CompletionTokens,
+		TotalTokens:      resp.Usage.TotalTokens,
+	}
+	return message, usage, nil
 }
 
-func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (string, error) {
+func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (string, *APIUsage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	defer cancel()
 
@@ -80,14 +82,16 @@ func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (strin
 	)
 	if err != nil {
 		slog.Error("ChatCompletionError", err)
-		return "", ErrOpenAIAPIRequest
+		return "", nil, ErrOpenAIAPIRequest
 	}
 
 	message := resp.Choices[0].Message.Content
-	usage := resp.Usage
-
-	slog.Debug("token usage", "prompt_tokens", usage.PromptTokens, "completion_tokens", usage.CompletionTokens, "total_tokens", usage.TotalTokens)
-	return message, nil
+	usage := &APIUsage{
+		PromptTokens:     resp.Usage.PromptTokens,
+		CompletionTokens: resp.Usage.CompletionTokens,
+		TotalTokens:      resp.Usage.TotalTokens,
+	}
+	return message, usage, nil
 }
 
 func createMessages(system, prompt string, history []Chat) []openai.ChatCompletionMessage {

@@ -30,9 +30,19 @@ func (id EventSourceID) Type() EventSourceType {
 	return unknownEventSource
 }
 
+type APIUsage struct {
+	PromptTokens     int
+	CompletionTokens int
+	TotalTokens      int
+}
+
+type APIUsageRepository interface {
+	Add(sid EventSourceID, usage APIUsage) error
+}
+
 type OpenAI interface {
-	Request(prompt string) (string, error)
-	RequestWithHistory(prompt string, history []Chat) (string, error)
+	Request(prompt string) (string, *APIUsage, error)
+	RequestWithHistory(prompt string, history []Chat) (string, *APIUsage, error)
 }
 
 type Chat struct {
@@ -49,14 +59,16 @@ type ChatRepository interface {
 }
 
 type ApplicationService struct {
-	openai   OpenAI
-	chatRepo ChatRepository
+	openai    OpenAI
+	chatRepo  ChatRepository
+	usageRepo APIUsageRepository
 }
 
-func NewApplicationService(openai OpenAI, chatRepo ChatRepository) *ApplicationService {
+func NewApplicationService(openai OpenAI, chatRepo ChatRepository, usageRepo APIUsageRepository) *ApplicationService {
 	return &ApplicationService{
-		openai:   openai,
-		chatRepo: chatRepo,
+		openai:    openai,
+		chatRepo:  chatRepo,
+		usageRepo: usageRepo,
 	}
 }
 
@@ -66,17 +78,20 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 
 	slog.Info("Print input", "input", input, "EventSourceID", sid)
 
-	reply, err := a.openai.Request(input)
+	reply, usage, err := a.openai.Request(input)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
 
 	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
-	a.chatRepo.Save(sid, Chat{
-		Input: input,
-		Reply: reply,
-	})
+	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
+		slog.Warn("An error occurred while saving chat", "err", err)
+	}
+	if err := a.usageRepo.Add(sid, *usage); err != nil {
+		slog.Warn("An error occurred while saving api usage", "err", err)
+	}
+
 	return reply
 }
 
@@ -102,16 +117,19 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 		return "なんかバグったにゃ"
 	}
 
-	reply, err := a.openai.RequestWithHistory(input, history)
+	reply, usage, err := a.openai.RequestWithHistory(input, history)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
 
 	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
-	a.chatRepo.Save(sid, Chat{
-		Input: input,
-		Reply: reply,
-	})
+	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
+		slog.Warn("An error occurred while saving chat", "err", err)
+	}
+	if err := a.usageRepo.Add(sid, *usage); err != nil {
+		slog.Warn("An error occurred while saving api usage", "err", err)
+	}
+
 	return reply
 }

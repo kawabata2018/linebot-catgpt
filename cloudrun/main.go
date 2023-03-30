@@ -22,7 +22,7 @@ func main() {
 		return
 	}
 
-	app := NewApplicationService(openaiAdaper, firestoreRepo)
+	app := NewApplicationService(openaiAdaper, firestoreRepo, firestoreRepo)
 
 	linebot, err := NewLinebot(app)
 	if err != nil {
