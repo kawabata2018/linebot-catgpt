@@ -53,13 +53,20 @@ func (l *Linebot) Handler(w http.ResponseWriter, req *http.Request) {
 	event := events[0]
 	slog.Debug("Print event", "event", event)
 
+	sid := getEventSourceID(event)
+
 	if event.Type == linebot.EventTypeUnfollow {
-		slog.Info("Unfollowed by", "EventSourceID", getEventSourceID(event))
+		slog.Info("Unfollowed by", "EventSourceID", sid)
 	}
 
 	switch message := event.Message.(type) {
 	case *linebot.TextMessage:
-		reply := l.app.ReplyWithHistory(message.Text, getEventSourceID(event))
+		input := message.Text
+		slog.Info("Print input", "input", input, "EventSourceID", sid)
+
+		reply := l.app.ReplyWithHistory(input, sid)
+		slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
+
 		l.replyTextMessage(event.ReplyToken, reply)
 	}
 }

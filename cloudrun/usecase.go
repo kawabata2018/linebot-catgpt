@@ -76,14 +76,10 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 	start := time.Now()
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
-	slog.Info("Print input", "input", input, "EventSourceID", sid)
-
 	reply, usage, err := a.openai.Request(input)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
-
-	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
 	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
 		slog.Warn("An error occurred while saving chat", "err", err)
@@ -104,8 +100,6 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 	start := time.Now()
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
-	slog.Info("Print input", "input", input, "EventSourceID", sid)
-
 	// 文字数が一定の長さを上回る場合は弾く
 	if utf8.RuneCountInString(input) > maxInputSize {
 		return "ごめんなさいにゃ、飼い主の懐事情でそんなに長い文章には答えられないにゃ"
@@ -121,8 +115,6 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
-
-	slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
 	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
 		slog.Warn("An error occurred while saving chat", "err", err)
