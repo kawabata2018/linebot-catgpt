@@ -56,6 +56,8 @@ type ChatRepository interface {
 	// 直近max件のチャット履歴を取得する
 	// 取得するリストは時系列順に並んでいる
 	FetchHistory(sid EventSourceID, max int) ([]Chat, error)
+	// 指定したEventSourceIDの全チャット履歴をアーカイブする
+	Archive(sid EventSourceID) error
 }
 
 type ApplicationService struct {
@@ -100,6 +102,15 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 	start := time.Now()
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
+	if input == "リセット" {
+		if err := a.chatRepo.Archive(sid); err != nil {
+			slog.Error("An error occured while archiving chat history", "err", err)
+			return "なんかバグったにゃ"
+		}
+		slog.Info("Archived chat history", "EventSourceID", sid)
+		return "チャット履歴をリセットしましたにゃ、今までの話は全部忘れちゃったにゃー"
+	}
+
 	// 文字数が一定の長さを上回る場合は弾く
 	if utf8.RuneCountInString(input) > maxInputSize {
 		return "ごめんなさいにゃ、飼い主の懐事情でそんなに長い文章には答えられないにゃ"
@@ -107,7 +118,7 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 
 	history, err := a.chatRepo.FetchHistory(sid, maxHistory)
 	if err != nil {
-		slog.Error("An error occured while fecthing chat history", err)
+		slog.Error("An error occured while fecthing chat history", "err", err)
 		return "なんかバグったにゃ"
 	}
 

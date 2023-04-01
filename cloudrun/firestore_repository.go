@@ -95,6 +95,57 @@ func (f *FirestoreRepository) FetchHistory(sid EventSourceID, max int) ([]Chat, 
 	return chatHistory, nil
 }
 
+type archivedDocument struct {
+	EventSourceID string
+	Input         string
+	Reply         string
+	Timestamp     time.Time
+	ArchivedAt    time.Time
+}
+
+func (f *FirestoreRepository) Archive(sid EventSourceID) error {
+	ctx := context.Background()
+
+	sourceColl := f.client.Collection(f.collectionName)
+	destColl := f.client.Collection(fmt.Sprintf("%s_archive", f.collectionName))
+
+	query := sourceColl.Where("EventSourceID", "==", sid)
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		var target document
+		doc.DataTo(&target)
+		archived := archivedDocument{
+			EventSourceID: target.EventSourceID,
+			Input:         target.Input,
+			Reply:         target.Reply,
+			Timestamp:     target.Timestamp,
+			ArchivedAt:    time.Now().In(jst),
+		}
+
+		// アーカイブ先コレクションに追加
+		if _, _, err = destColl.Add(ctx, archived); err != nil {
+			return err
+		}
+
+		// 対象のドキュメントをコレクションから削除
+		if _, err = doc.Ref.Delete(ctx); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 type usageDocument struct {
 	EventSourceID    string
 	PromptTokens     int
