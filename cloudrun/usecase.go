@@ -136,3 +136,11 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 
 	return reply
 }
+
+func (a *ApplicationService) Unfollow(sid EventSourceID) {
+	if err := a.chatRepo.Archive(sid); err != nil {
+		slog.Error("An error occured while archiving chat history", "err", err)
+		return
+	}
+	slog.Info("Archived chat history", "EventSourceID", sid)
+}
