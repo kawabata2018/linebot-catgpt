@@ -122,8 +122,11 @@ func (f *FirestoreRepository) Archive(sid EventSourceID) error {
 			return err
 		}
 
+		// アーカイブ用ドキュメントに詰め替える
 		var target document
-		doc.DataTo(&target)
+		if err := doc.DataTo(&target); err != nil {
+			return err
+		}
 		archived := archivedDocument{
 			EventSourceID: target.EventSourceID,
 			Input:         target.Input,
