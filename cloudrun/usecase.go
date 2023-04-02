@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 	"unicode/utf8"
 
@@ -37,7 +38,10 @@ type APIUsage struct {
 }
 
 type APIUsageRepository interface {
+	// APIリクエストに使用したトークン数を記録する
 	Add(sid EventSourceID, usage APIUsage) error
+	// その日の使用トークン数の合計を返す
+	FetchTotalTokens(sid EventSourceID) (int, error)
 }
 
 type OpenAI interface {
@@ -109,6 +113,15 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 		}
 		slog.Info("Archived chat history", "EventSourceID", sid)
 		return "チャット履歴をリセットしましたにゃ、今までの話は全部忘れちゃったにゃー"
+	}
+
+	if input == "トークン" {
+		sum, err := a.usageRepo.FetchTotalTokens(sid)
+		if err != nil {
+			slog.Error("An error occured while fetching the sum of total tokens", "err", err)
+			return "なんかバグったにゃ"
+		}
+		return fmt.Sprintf("今日の使用トークン数は\n%d だにゃ", sum)
 	}
 
 	// 文字数が一定の長さを上回る場合は弾く

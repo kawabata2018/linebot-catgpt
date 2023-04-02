@@ -175,6 +175,39 @@ func (f *FirestoreRepository) Add(sid EventSourceID, usage APIUsage) error {
 	return err
 }
 
+func (f *FirestoreRepository) FetchTotalTokens(sid EventSourceID) (int, error) {
+	ctx := context.Background()
+
+	todayStart := time.Now().In(jst).Truncate(24 * time.Hour)
+	todayEnd := todayStart.Add(24 * time.Hour)
+
+	coll := f.client.Collection(fmt.Sprintf("%s_usage", f.collectionName))
+	query := coll.Where("EventSourceID", "==", sid).
+		Where("Timestamp", ">=", todayStart).
+		Where("Timestamp", "<", todayEnd)
+
+	iter := query.Documents(ctx)
+	defer iter.Stop()
+
+	sum := 0
+	for {
+		doc, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return 0, err
+		}
+		var usage usageDocument
+		if err := doc.DataTo(&usage); err != nil {
+			return 0, err
+		}
+		sum += usage.TotalTokens
+	}
+
+	return sum, nil
+}
+
 func (f *FirestoreRepository) Close() error {
 	slog.Debug("Firestore client closed")
 	return f.client.Close()
