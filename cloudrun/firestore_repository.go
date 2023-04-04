@@ -178,7 +178,8 @@ func (f *FirestoreRepository) Add(sid EventSourceID, usage APIUsage) error {
 func (f *FirestoreRepository) FetchTotalTokens(sid EventSourceID) (int, error) {
 	ctx := context.Background()
 
-	todayStart := time.Now().In(jst).Truncate(24 * time.Hour)
+	now := time.Now().In(jst)
+	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
 	todayEnd := todayStart.Add(24 * time.Hour)
 
 	coll := f.client.Collection(fmt.Sprintf("%s_usage", f.collectionName))
