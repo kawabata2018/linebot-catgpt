@@ -48,9 +48,7 @@ type document struct {
 	Timestamp     time.Time
 }
 
-func (f *FirestoreRepository) Save(sid EventSourceID, chat Chat) error {
-	ctx := context.Background()
-
+func (f *FirestoreRepository) Save(ctx context.Context, sid EventSourceID, chat Chat) error {
 	doc := document{
 		EventSourceID: string(sid),
 		Input:         chat.Input,
@@ -62,9 +60,7 @@ func (f *FirestoreRepository) Save(sid EventSourceID, chat Chat) error {
 	return err
 }
 
-func (f *FirestoreRepository) FetchHistory(sid EventSourceID, max int) ([]Chat, error) {
-	ctx := context.Background()
-
+func (f *FirestoreRepository) FetchHistory(ctx context.Context, sid EventSourceID, max int) ([]Chat, error) {
 	query := f.client.Collection(f.collectionName).
 		Where("EventSourceID", "==", sid).
 		OrderBy("Timestamp", firestore.Desc).
@@ -103,9 +99,7 @@ type archivedDocument struct {
 	ArchivedAt    time.Time
 }
 
-func (f *FirestoreRepository) Archive(sid EventSourceID) error {
-	ctx := context.Background()
-
+func (f *FirestoreRepository) Archive(ctx context.Context, sid EventSourceID) error {
 	sourceColl := f.client.Collection(f.collectionName)
 	destColl := f.client.Collection(fmt.Sprintf("%s_archive", f.collectionName))
 
@@ -157,10 +151,8 @@ type usageDocument struct {
 	Timestamp        time.Time
 }
 
-func (f *FirestoreRepository) Add(sid EventSourceID, usage APIUsage) error {
+func (f *FirestoreRepository) Add(ctx context.Context, sid EventSourceID, usage APIUsage) error {
 	slog.Debug("Print api usage", "usage", usage)
-
-	ctx := context.Background()
 
 	coll := fmt.Sprintf("%s_usage", f.collectionName)
 	doc := usageDocument{
@@ -175,9 +167,7 @@ func (f *FirestoreRepository) Add(sid EventSourceID, usage APIUsage) error {
 	return err
 }
 
-func (f *FirestoreRepository) FetchTotalTokens(sid EventSourceID) (int, error) {
-	ctx := context.Background()
-
+func (f *FirestoreRepository) FetchTotalTokens(ctx context.Context, sid EventSourceID) (int, error) {
 	now := time.Now().In(jst)
 	todayStart := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, jst)
 	todayEnd := todayStart.Add(24 * time.Hour)

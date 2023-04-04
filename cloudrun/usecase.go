@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 	"unicode/utf8"
@@ -39,14 +40,14 @@ type APIUsage struct {
 
 type APIUsageRepository interface {
 	// APIリクエストに使用したトークン数を記録する
-	Add(sid EventSourceID, usage APIUsage) error
+	Add(ctx context.Context, sid EventSourceID, usage APIUsage) error
 	// その日の使用トークン数の合計を返す
-	FetchTotalTokens(sid EventSourceID) (int, error)
+	FetchTotalTokens(ctx context.Context, sid EventSourceID) (int, error)
 }
 
 type OpenAI interface {
-	Request(prompt string) (string, *APIUsage, error)
-	RequestWithHistory(prompt string, history []Chat) (string, *APIUsage, error)
+	Request(ctx context.Context, prompt string) (string, *APIUsage, error)
+	RequestWithHistory(ctx context.Context, prompt string, history []Chat) (string, *APIUsage, error)
 }
 
 type Chat struct {
@@ -56,12 +57,12 @@ type Chat struct {
 
 type ChatRepository interface {
 	// チャット(入力、返答)を永続化する
-	Save(sid EventSourceID, chat Chat) error
+	Save(ctx context.Context, sid EventSourceID, chat Chat) error
 	// 直近max件のチャット履歴を取得する
 	// 取得するリストは時系列順に並んでいる
-	FetchHistory(sid EventSourceID, max int) ([]Chat, error)
+	FetchHistory(ctx context.Context, sid EventSourceID, max int) ([]Chat, error)
 	// 指定したEventSourceIDの全チャット履歴をアーカイブする
-	Archive(sid EventSourceID) error
+	Archive(ctx context.Context, sid EventSourceID) error
 }
 
 type ApplicationService struct {
@@ -79,18 +80,20 @@ func NewApplicationService(openai OpenAI, chatRepo ChatRepository, usageRepo API
 }
 
 func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
+	ctx := context.Background()
+
 	start := time.Now()
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
-	reply, usage, err := a.openai.Request(input)
+	reply, usage, err := a.openai.Request(ctx, input)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
 
-	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
+	if err := a.chatRepo.Save(ctx, sid, Chat{Input: input, Reply: reply}); err != nil {
 		slog.Warn("An error occurred while saving chat", "err", err)
 	}
-	if err := a.usageRepo.Add(sid, *usage); err != nil {
+	if err := a.usageRepo.Add(ctx, sid, *usage); err != nil {
 		slog.Warn("An error occurred while saving api usage", "err", err)
 	}
 
@@ -103,11 +106,13 @@ const (
 )
 
 func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) string {
+	ctx := context.Background()
+
 	start := time.Now()
 	defer slog.Debug("execution time", "duration", time.Since(start))
 
 	if input == "リセット" {
-		if err := a.chatRepo.Archive(sid); err != nil {
+		if err := a.chatRepo.Archive(ctx, sid); err != nil {
 			slog.Error("An error occured while archiving chat history", "err", err)
 			return "なんかバグったにゃ"
 		}
@@ -116,7 +121,7 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 	}
 
 	if input == "トークン" {
-		sum, err := a.usageRepo.FetchTotalTokens(sid)
+		sum, err := a.usageRepo.FetchTotalTokens(ctx, sid)
 		if err != nil {
 			slog.Error("An error occured while fetching the sum of total tokens", "err", err)
 			return "なんかバグったにゃ"
@@ -129,21 +134,21 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 		return "ごめんなさいにゃ、飼い主の懐事情でそんなに長い文章には答えられないにゃ"
 	}
 
-	history, err := a.chatRepo.FetchHistory(sid, maxHistory)
+	history, err := a.chatRepo.FetchHistory(ctx, sid, maxHistory)
 	if err != nil {
 		slog.Error("An error occured while fecthing chat history", "err", err)
 		return "なんかバグったにゃ"
 	}
 
-	reply, usage, err := a.openai.RequestWithHistory(input, history)
+	reply, usage, err := a.openai.RequestWithHistory(ctx, input, history)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
 
-	if err := a.chatRepo.Save(sid, Chat{Input: input, Reply: reply}); err != nil {
+	if err := a.chatRepo.Save(ctx, sid, Chat{Input: input, Reply: reply}); err != nil {
 		slog.Warn("An error occurred while saving chat", "err", err)
 	}
-	if err := a.usageRepo.Add(sid, *usage); err != nil {
+	if err := a.usageRepo.Add(ctx, sid, *usage); err != nil {
 		slog.Warn("An error occurred while saving api usage", "err", err)
 	}
 
@@ -151,7 +156,8 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 }
 
 func (a *ApplicationService) Unfollow(sid EventSourceID) {
-	if err := a.chatRepo.Archive(sid); err != nil {
+	ctx := context.Background()
+	if err := a.chatRepo.Archive(ctx, sid); err != nil {
 		slog.Error("An error occured while archiving chat history", "err", err)
 		return
 	}

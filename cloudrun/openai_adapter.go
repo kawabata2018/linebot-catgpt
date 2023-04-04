@@ -30,8 +30,8 @@ func NewOpenAIAdapter() (*OpenAIAdapter, error) {
 
 const requestTimeout = 100 * time.Second
 
-func (a *OpenAIAdapter) Request(prompt string) (string, *APIUsage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+func (a *OpenAIAdapter) Request(ctx context.Context, prompt string) (string, *APIUsage, error) {
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
 	client := openai.NewClient(a.config.OpenAIAPIKey)
@@ -62,8 +62,8 @@ func (a *OpenAIAdapter) Request(prompt string) (string, *APIUsage, error) {
 	return message, usage, nil
 }
 
-func (a *OpenAIAdapter) RequestWithHistory(prompt string, history []Chat) (string, *APIUsage, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+func (a *OpenAIAdapter) RequestWithHistory(ctx context.Context, prompt string, history []Chat) (string, *APIUsage, error) {
+	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
 	client := openai.NewClient(a.config.OpenAIAPIKey)
