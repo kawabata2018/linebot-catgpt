@@ -4,9 +4,10 @@ import (
 	"context"
 	"time"
 
+	"log/slog"
+
 	"github.com/caarlos0/env/v7"
 	"github.com/sashabaranov/go-openai"
-	"golang.org/x/exp/slog"
 )
 
 type openaiConfig struct {

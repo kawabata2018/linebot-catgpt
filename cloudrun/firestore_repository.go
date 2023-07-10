@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"time"
 
+	"log/slog"
+
 	"cloud.google.com/go/firestore"
 	"github.com/caarlos0/env/v7"
-	"golang.org/x/exp/slog"
 	"google.golang.org/api/iterator"
 )
 

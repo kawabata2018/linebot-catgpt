@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"log/slog"
+
 	"github.com/caarlos0/env/v7"
-	"golang.org/x/exp/slog"
 )
 
 type serverConfig struct {

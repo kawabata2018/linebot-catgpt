@@ -3,9 +3,10 @@ package main
 import (
 	"net/http"
 
+	"log/slog"
+
 	"github.com/caarlos0/env/v7"
 	"github.com/line/line-bot-sdk-go/v7/linebot"
-	"golang.org/x/exp/slog"
 )
 
 type linebotConfig struct {

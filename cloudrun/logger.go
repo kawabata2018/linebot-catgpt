@@ -3,12 +3,12 @@ package main
 import (
 	"os"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 func NewGCPLogger() *slog.Logger {
 	return slog.New(
-		slog.HandlerOptions{
+		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level: slog.LevelDebug,
 			ReplaceAttr: func(_ []string, a slog.Attr) slog.Attr {
 				// Cloud Logging LogSeverity
@@ -23,6 +23,6 @@ func NewGCPLogger() *slog.Logger {
 				}
 				return a
 			},
-		}.NewJSONHandler(os.Stdout),
+		}),
 	)
 }
