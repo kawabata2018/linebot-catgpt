@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"log/slog"
@@ -88,8 +89,8 @@ func (f *FirestoreRepository) FetchHistory(ctx context.Context, sid EventSourceI
 	}
 
 	// タイムスタンプ降順になっているので、時系列順に直してあげる
-	chatHistory := reverse(chats)
-	return chatHistory, nil
+	slices.Reverse(chats)
+	return chats, nil
 }
 
 type archivedDocument struct {
@@ -203,15 +204,4 @@ func (f *FirestoreRepository) FetchTotalTokens(ctx context.Context, sid EventSou
 func (f *FirestoreRepository) Close() error {
 	slog.Debug("Firestore client closed")
 	return f.client.Close()
-}
-
-func reverse(s []Chat) []Chat {
-	// スライスの長さを取得する
-	n := len(s)
-	// スライスの前半と後半を入れ替える
-	for i := 0; i < n/2; i++ {
-		j := n - i - 1
-		s[i], s[j] = s[j], s[i]
-	}
-	return s
 }
