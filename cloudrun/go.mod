@@ -1,6 +1,6 @@
 module catgpt
 
-go 1.21rc3
+go 1.21
 
 require (
 	cloud.google.com/go/firestore v1.11.0
