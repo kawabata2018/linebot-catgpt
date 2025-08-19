@@ -21,7 +21,7 @@ type OpenAIAdapter struct {
 func NewOpenAIAdapter() (*OpenAIAdapter, error) {
 	cfg := openaiConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Failed to parse env", err)
+		slog.Error("Failed to parse env", "error", err)
 		return nil, ErrParseConfig
 	}
 	return &OpenAIAdapter{
@@ -50,7 +50,7 @@ func (a *OpenAIAdapter) Request(ctx context.Context, prompt string) (string, *AP
 		},
 	)
 	if err != nil {
-		slog.Error("ChatCompletionError", err)
+		slog.Error("ChatCompletionError", "error", err)
 		return "", nil, ErrOpenAIAPIRequest
 	}
 
@@ -82,7 +82,7 @@ func (a *OpenAIAdapter) RequestWithHistory(ctx context.Context, prompt string, h
 		},
 	)
 	if err != nil {
-		slog.Error("ChatCompletionError", err)
+		slog.Error("ChatCompletionError", "error", err)
 		return "", nil, ErrOpenAIAPIRequest
 	}
 

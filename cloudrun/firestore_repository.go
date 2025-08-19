@@ -25,12 +25,12 @@ type FirestoreRepository struct {
 func NewFirestoreRepository() (*FirestoreRepository, error) {
 	cfg := firestoreConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Failed to parse env", err)
+		slog.Error("Failed to parse env", "error", err)
 		return nil, ErrParseConfig
 	}
 	client, err := firestore.NewClient(context.Background(), cfg.ProjectID)
 	if err != nil {
-		slog.Error("Failed to create firestore client", err)
+		slog.Error("Failed to create firestore client", "error", err)
 		return nil, ErrNewFirestoreClient
 	}
 	return &FirestoreRepository{
