@@ -5,7 +5,7 @@ go 1.25
 require (
 	cloud.google.com/go/firestore v1.11.0
 	github.com/caarlos0/env/v11 v11.3.1
-	github.com/line/line-bot-sdk-go/v7 v7.20.0
+	github.com/line/line-bot-sdk-go/v8 v8.14.2
 	github.com/sashabaranov/go-openai v1.41.1
 	google.golang.org/api v0.132.0
 )
