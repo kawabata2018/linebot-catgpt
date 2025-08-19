@@ -22,7 +22,7 @@ type Server struct {
 func NewServer(handler http.HandlerFunc) (*Server, error) {
 	cfg := serverConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Failed to parse env", err)
+		slog.Error("Failed to parse env", "error", err)
 		return nil, ErrParseConfig
 	}
 	mux := http.NewServeMux()
@@ -42,7 +42,7 @@ func (s *Server) Run() {
 	go func() {
 		if err := s.httpServer.ListenAndServe(); err != nil {
 			if err != http.ErrServerClosed {
-				slog.Error("Failed to listen and serve", err)
+				slog.Error("Failed to listen and serve", "error", err)
 			}
 			slog.Debug("Server closed")
 		}

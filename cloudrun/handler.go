@@ -23,12 +23,12 @@ type Linebot struct {
 func NewLinebot(app *ApplicationService) (*Linebot, error) {
 	cfg := linebotConfig{}
 	if err := env.Parse(&cfg); err != nil {
-		slog.Error("Failed to parse env", err)
+		slog.Error("Failed to parse env", "error", err)
 		return nil, ErrParseConfig
 	}
 	client, err := linebot.New(cfg.ChannelSecret, cfg.ChannelAccessToken)
 	if err != nil {
-		slog.Error("Failed to create linebot", err)
+		slog.Error("Failed to create linebot", "error", err)
 		return nil, err
 	}
 
@@ -43,7 +43,7 @@ func (l *Linebot) Handler(w http.ResponseWriter, req *http.Request) {
 	// リクエストを受信するのにわざわざ *linebot.Client を使っているのは、署名を検証するため（それ以外には使っていない）
 	events, err := l.client.ParseRequest(req)
 	if err != nil {
-		slog.Error("ParseRequestError", err)
+		slog.Error("ParseRequestError", "error", err)
 		return
 	}
 	if len(events) == 0 {
@@ -76,7 +76,7 @@ func (l *Linebot) Handler(w http.ResponseWriter, req *http.Request) {
 
 func (l *Linebot) replyTextMessage(token, message string) {
 	if _, err := l.client.ReplyMessage(token, linebot.NewTextMessage(message)).Do(); err != nil {
-		slog.Error("ReplyMessageError", err)
+		slog.Error("ReplyMessageError", "error", err)
 		return
 	}
 }
