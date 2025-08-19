@@ -1,4 +1,4 @@
-FROM golang:1.21.1-bullseye AS builder
+FROM golang:1.25.0-bookworm AS builder
 
 WORKDIR /workspace
 COPY go.mod go.sum ./
@@ -8,7 +8,7 @@ COPY ./*.go ./
 RUN CGO_ENABLED=0 GOOS=linux go build -v -o app .
 
 
-FROM gcr.io/distroless/base-debian11
+FROM gcr.io/distroless/static-debian12
 
 WORKDIR /root
 COPY --from=builder /workspace/app . 
