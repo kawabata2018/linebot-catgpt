@@ -8,7 +8,7 @@ import (
 
 	"log/slog"
 
-	"github.com/caarlos0/env/v7"
+	"github.com/caarlos0/env/v11"
 )
 
 type serverConfig struct {

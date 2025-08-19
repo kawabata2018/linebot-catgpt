@@ -5,7 +5,7 @@ import (
 
 	"log/slog"
 
-	"github.com/caarlos0/env/v7"
+	"github.com/caarlos0/env/v11"
 	"github.com/line/line-bot-sdk-go/v7/linebot"
 )
 

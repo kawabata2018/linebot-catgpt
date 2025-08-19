@@ -9,7 +9,7 @@ import (
 	"log/slog"
 
 	"cloud.google.com/go/firestore"
-	"github.com/caarlos0/env/v7"
+	"github.com/caarlos0/env/v11"
 	"google.golang.org/api/iterator"
 )
 
