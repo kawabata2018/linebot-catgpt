@@ -16,13 +16,14 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: "1.25"
+        go-version: "1.24"
 
     - name: Run golangci-lint and report via reviewdog
       uses: reviewdog/action-golangci-lint@v2
       with:
+        golangci_lint_version: v1.64.8
         github_token: ${{ secrets.GITHUB_TOKEN }}
         workdir: cloudrun
-        golangci_lint_flags: "--config=../.golangci.yml"
+        golangci_lint_flags: "--config=../.golangci.yml --verbose"
         reporter: github-pr-review
         level: error
