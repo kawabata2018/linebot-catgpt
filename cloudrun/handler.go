@@ -17,10 +17,9 @@ type linebotConfig struct {
 type Linebot struct {
 	config linebotConfig
 	client *linebot.Client
-	app    *ApplicationService
 }
 
-func NewLinebot(app *ApplicationService) (*Linebot, error) {
+func NewLinebot() (*Linebot, error) {
 	cfg := linebotConfig{}
 	if err := env.Parse(&cfg); err != nil {
 		slog.Error("Failed to parse env", "error", err)
@@ -35,42 +34,43 @@ func NewLinebot(app *ApplicationService) (*Linebot, error) {
 	return &Linebot{
 		config: cfg,
 		client: client,
-		app:    app,
 	}, nil
 }
 
-func (l *Linebot) Handler(w http.ResponseWriter, req *http.Request) {
-	// リクエストを受信するのにわざわざ *linebot.Client を使っているのは、署名を検証するため（それ以外には使っていない）
-	events, err := l.client.ParseRequest(req)
-	if err != nil {
-		slog.Error("ParseRequestError", "error", err)
-		return
-	}
-	if len(events) == 0 {
-		slog.Error("no events")
-		return
-	}
+func (l *Linebot) CreateHandler(chatReplyer ChatReplyer, unfollower Unfollower) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		// リクエストを受信するのにわざわざ *linebot.Client を使っているのは、署名を検証するため（それ以外には使っていない）
+		events, err := l.client.ParseRequest(req)
+		if err != nil {
+			slog.Error("ParseRequestError", "error", err)
+			return
+		}
+		if len(events) == 0 {
+			slog.Error("no events")
+			return
+		}
 
-	event := events[0]
-	slog.Debug("Print event", "event", event)
+		event := events[0]
+		slog.Debug("Print event", "event", event)
 
-	// イベントからEventSourceIDを取得
-	sid := getEventSourceID(event)
+		// イベントからEventSourceIDを取得
+		sid := getEventSourceID(event)
 
-	if event.Type == linebot.EventTypeUnfollow {
-		slog.Info("Unfollowed by", "EventSourceID", sid)
-		l.app.Unfollow(sid)
-	}
+		if event.Type == linebot.EventTypeUnfollow {
+			slog.Info("Unfollowed by", "EventSourceID", sid)
+			unfollower(sid)
+		}
 
-	switch message := event.Message.(type) {
-	case *linebot.TextMessage:
-		input := message.Text
-		slog.Info("Print input", "input", input, "EventSourceID", sid)
+		switch message := event.Message.(type) {
+		case *linebot.TextMessage:
+			input := message.Text
+			slog.Info("Print input", "input", input, "EventSourceID", sid)
 
-		reply := l.app.ReplyWithHistory(input, sid)
-		slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
+			reply := chatReplyer(input, sid)
+			slog.Info("Print reply", "reply", reply, "EventSourceID", sid)
 
-		l.replyTextMessage(event.ReplyToken, reply)
+			l.replyTextMessage(event.ReplyToken, reply)
+		}
 	}
 }
 

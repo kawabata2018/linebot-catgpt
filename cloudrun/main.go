@@ -21,16 +21,16 @@ func main() {
 		slog.Error("Failed to create Firestore repository")
 		return
 	}
-
 	app := NewApplicationService(openaiAdaper, firestoreRepo, firestoreRepo)
 
-	linebot, err := NewLinebot(app)
+	linebot, err := NewLinebot()
 	if err != nil {
 		slog.Error("Failed to create Linebot")
 		return
 	}
+	httpHandler := linebot.CreateHandler(app.ReplyWithHistory, app.Unfollow)
 
-	server, err := NewServer(linebot.Handler)
+	server, err := NewServer(httpHandler)
 	if err != nil {
 		slog.Error("Failed to create server")
 		return
