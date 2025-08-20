@@ -1,0 +1,29 @@
+run:
+  timeout: 1m
+  issues-exit-code: 1
+  tests: true
+
+output:
+  formats: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+
+linters-settings:
+  govet:
+    shadow: true
+  gocyclo:
+    min-complexity: 10
+  dupl:
+    threshold: 100
+
+linters:
+  # Use default enabled linters
+  # Default includes: errcheck, gosimple, govet, ineffassign, staticcheck, typecheck, unused
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+severity:
+  # default-severity: error
+  # case-sensitive: false
