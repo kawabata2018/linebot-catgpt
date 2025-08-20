@@ -64,6 +64,12 @@ type ChatRepository interface {
 	Archive(ctx context.Context, sid EventSourceID) error
 }
 
+// ChatReplyer チャットの入力に対して返答するワークフローを関数の型で定義する
+type ChatReplyer func(input string, sid EventSourceID) string
+
+// Unfollower フォローを解除されたときのワークフローを関数の型で定義する
+type Unfollower func(sid EventSourceID)
+
 type ApplicationService struct {
 	openai    OpenAI
 	chatRepo  ChatRepository
@@ -77,6 +83,11 @@ func NewApplicationService(openai OpenAI, chatRepo ChatRepository, usageRepo API
 		usageRepo: usageRepo,
 	}
 }
+
+// 各メソッドが定義された関数型を満たしているか検証
+var _ ChatReplyer = (*ApplicationService)(nil).Reply
+var _ ChatReplyer = (*ApplicationService)(nil).ReplyWithHistory
+var _ Unfollower = (*ApplicationService)(nil).Unfollow
 
 func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 	start := time.Now()
