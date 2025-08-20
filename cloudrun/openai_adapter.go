@@ -31,7 +31,7 @@ func NewOpenAIAdapter() (*OpenAIAdapter, error) {
 
 const requestTimeout = 100 * time.Second
 
-func (a *OpenAIAdapter) Request(ctx context.Context, prompt string) (string, *APIUsage, error) {
+func (a *OpenAIAdapter) RequestWithHistory(ctx context.Context, prompt string, history ...Chat) (string, *APIUsage, error) {
 	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
 	defer cancel()
 
@@ -45,7 +45,7 @@ func (a *OpenAIAdapter) Request(ctx context.Context, prompt string) (string, *AP
 			Messages: createMessages(
 				"あなたはネコ型対話ロボット「CatGPT」にゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
 				prompt,
-				nil,
+				history...,
 			),
 		},
 	)
@@ -63,39 +63,7 @@ func (a *OpenAIAdapter) Request(ctx context.Context, prompt string) (string, *AP
 	return message, usage, nil
 }
 
-func (a *OpenAIAdapter) RequestWithHistory(ctx context.Context, prompt string, history []Chat) (string, *APIUsage, error) {
-	ctx, cancel := context.WithTimeout(ctx, requestTimeout)
-	defer cancel()
-
-	client := openai.NewClient(a.config.OpenAIAPIKey)
-	resp, err := client.CreateChatCompletion(
-		ctx,
-		openai.ChatCompletionRequest{
-			Model:       openai.GPT3Dot5Turbo,
-			MaxTokens:   300,
-			Temperature: 0.9,
-			Messages: createMessages(
-				"あなたはネコ型対話ロボット「CatGPT」にゃ、ネコ風に語尾は「にゃ」にしてくださいにゃん",
-				prompt,
-				history,
-			),
-		},
-	)
-	if err != nil {
-		slog.Error("ChatCompletionError", "error", err)
-		return "", nil, ErrOpenAIAPIRequest
-	}
-
-	message := resp.Choices[0].Message.Content
-	usage := &APIUsage{
-		PromptTokens:     resp.Usage.PromptTokens,
-		CompletionTokens: resp.Usage.CompletionTokens,
-		TotalTokens:      resp.Usage.TotalTokens,
-	}
-	return message, usage, nil
-}
-
-func createMessages(system, prompt string, history []Chat) []openai.ChatCompletionMessage {
+func createMessages(system, prompt string, history ...Chat) []openai.ChatCompletionMessage {
 	messages := make([]openai.ChatCompletionMessage, 0, len(history)+2)
 
 	messages = append(messages, openai.ChatCompletionMessage{

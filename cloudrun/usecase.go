@@ -46,8 +46,7 @@ type APIUsageRepository interface {
 }
 
 type OpenAI interface {
-	Request(ctx context.Context, prompt string) (string, *APIUsage, error)
-	RequestWithHistory(ctx context.Context, prompt string, history []Chat) (string, *APIUsage, error)
+	RequestWithHistory(ctx context.Context, prompt string, history ...Chat) (string, *APIUsage, error)
 }
 
 type Chat struct {
@@ -85,8 +84,13 @@ func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
 		slog.Debug("execution time", "duration", time.Since(start))
 	}()
 
+	// 文字数が一定の長さを上回る場合は弾く
+	if utf8.RuneCountInString(input) > maxInputSize {
+		return "ごめんなさいにゃ、飼い主の懐事情でそんなに長い文章には答えられないにゃ"
+	}
+
 	ctx := context.Background()
-	reply, usage, err := a.openai.Request(ctx, input)
+	reply, usage, err := a.openai.RequestWithHistory(ctx, input)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
@@ -142,7 +146,7 @@ func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) s
 		return "なんかバグったにゃ"
 	}
 
-	reply, usage, err := a.openai.RequestWithHistory(ctx, input, history)
+	reply, usage, err := a.openai.RequestWithHistory(ctx, input, history...)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
 	}
