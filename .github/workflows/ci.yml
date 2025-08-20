@@ -23,7 +23,7 @@ jobs:
       with:
         golangci_lint_version: v1.64.8
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        workdir: cloudrun
-        golangci_lint_flags: "--config=../.golangci.yml --verbose"
+        golangci_lint_flags: "--verbose ./cloudrun"
         reporter: github-pr-review
         level: error
+        fail_level: error
