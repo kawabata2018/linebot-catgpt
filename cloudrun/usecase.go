@@ -80,11 +80,12 @@ func NewApplicationService(openai OpenAI, chatRepo ChatRepository, usageRepo API
 }
 
 func (a *ApplicationService) Reply(input string, sid EventSourceID) string {
-	ctx := context.Background()
-
 	start := time.Now()
-	defer slog.Debug("execution time", "duration", time.Since(start))
+	defer func() {
+		slog.Debug("execution time", "duration", time.Since(start))
+	}()
 
+	ctx := context.Background()
 	reply, usage, err := a.openai.Request(ctx, input)
 	if err != nil {
 		return "OpenAI APIから返事が来なかったにゃ"
@@ -106,11 +107,12 @@ const (
 )
 
 func (a *ApplicationService) ReplyWithHistory(input string, sid EventSourceID) string {
-	ctx := context.Background()
-
 	start := time.Now()
-	defer slog.Debug("execution time", "duration", time.Since(start))
+	defer func() {
+		slog.Debug("execution time", "duration", time.Since(start))
+	}()
 
+	ctx := context.Background()
 	if input == "リセット" {
 		if err := a.chatRepo.Archive(ctx, sid); err != nil {
 			slog.Error("An error occured while archiving chat history", "err", err)

@@ -44,5 +44,7 @@ func main() {
 	<-quit
 	slog.Debug("SIGNAL received, then shutting down...")
 	firestoreRepo.Close()
-	server.GracefulShutdown()
+	if err := server.GracefulShutdown(); err != nil {
+		slog.Error("Failed to gracefully shutdown server", "error", err)
+	}
 }
